@@ -11,9 +11,6 @@
 
 @interface RotationView (){
     
-    //背景图片
-    UIImageView *_imageView;
-    
     //初始大小
     CGSize      _myBounds;
     

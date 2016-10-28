@@ -14,8 +14,9 @@ typedef void(^RotationViewHandle)(RotationView *rotationView);
 @interface RotationView : UIView
 
 
-@property (nonatomic, copy) NSString *imageName;//图片名字
+@property (nonatomic, strong) UIImageView *imageView;
 
+@property (nonatomic, copy) NSString *imageName;//图片名字
 
 
 @property (nonatomic, assign) CGFloat angle;//移动的角度
