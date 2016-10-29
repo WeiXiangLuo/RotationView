@@ -30,13 +30,16 @@
     
     CGPoint _center;
     
-    NSTimer *_timer;
-    
     CGFloat _tempAngle;
+    
+    BOOL    _movingFlag;
 
 }
 
 @property (nonatomic, strong) NSMutableArray *ballArray;//用于存放小球的数组
+
+@property (nonatomic, retain) CADisplayLink *link;//小球运动的定时器动画
+
 
 @end
 
@@ -127,6 +130,10 @@
  */
 - (void)panGestureRecognizer:(UIPanGestureRecognizer *)pan {
  
+    if (_movingFlag) {
+        return;
+    }
+    
     if (pan.state == UIGestureRecognizerStateBegan) {
         NSLog(@"%s : 触摸开始",__FUNCTION__);
         _beginPoint = [pan locationInView:self.view];
@@ -309,25 +316,79 @@
  */
 - (void)animationBallMoveWithAngle:(CGFloat)angle andBall:(RotationView *)view {
 
-    [UIView animateWithDuration:0.8 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+    
+    _tempAngle = angle;
+    
+    if (self.link == nil) {
         
-        [self moveTheBall:angle changSize:NO];
-        
-        for (RotationView *temp in self.ballArray) {
-            
-            temp.angle += angle;
-            
-            
-        }
-        
+        _movingFlag = YES;
+        self.link = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLink:)];
+        [self.link addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    
+    }
+}
 
-    } completion:nil];
+
+
+
+
+#pragma mark 小球的CADisplayLink定时器动画
+- (void)displayLink:(CADisplayLink *)sender {
     
     
+    static float speed = 0;
+    float acceleration = (_tempAngle > 0 ? 0.01 : -0.01);
+    
+    static BOOL isSpeedUp = YES;
+    
+    if (speed < 0.5 && speed > -0.5 && isSpeedUp) {
+        speed += acceleration;
+        NSLog(@"正在加速 speed:%f angle:%f",speed,_tempAngle);
+    }else if(_tempAngle < 10){
+        isSpeedUp = NO;
+        speed -= acceleration;
+        NSLog(@"正在减速 speed:%f angle:%f",speed,_tempAngle);
+    }else{
+        NSLog(@"正在匀速 speed:%f angle:%f a:%f",speed,_tempAngle,acceleration);
+    }
+    
+    _tempAngle -= speed;
+    
+    if (_tempAngle * acceleration <= 0) {
+        
+        speed = _tempAngle;
+        
+        [self.link invalidate];
+        self.link = nil;
+        speed = 0;
+        _movingFlag = NO;
+        isSpeedUp = YES;
+        
+    }
     
     
+    for (RotationView *view in self.ballArray) {
+        
+        view.angle += speed;
+    }
+    
+    [self moveTheBall:speed changSize:NO];
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
