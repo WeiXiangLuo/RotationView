@@ -33,6 +33,8 @@
     CGFloat _tempAngle;
     
     BOOL    _movingFlag;
+    
+    BOOL    _pushFlag;
 
 }
 
@@ -112,13 +114,14 @@
         
         //小球点击方法
         [ball rotationViewHandle:^(RotationView *rotationView) {
-            NSLog(@"你点击了我：%@",rotationView.imageName);
+            if (!_movingFlag) {
+                NSLog(@"你点击了我：%@",rotationView.imageName);
+                [self touchUpMyBall:rotationView];
+            }
+            
         }];
 
     }
-    
-    
-    
 }
 
 
@@ -336,53 +339,68 @@
 - (void)displayLink:(CADisplayLink *)sender {
     
     
+    
     static float speed = 0;
-    float acceleration = (_tempAngle > 0 ? 0.01 : -0.01);
+    float easing = 0.05;
     
-    static BOOL isSpeedUp = YES;
-    
-    if (speed < 0.5 && speed > -0.5 && isSpeedUp) {
-        speed += acceleration;
-        NSLog(@"正在加速 speed:%f angle:%f",speed,_tempAngle);
-    }else if(_tempAngle < 10){
-        isSpeedUp = NO;
-        speed -= acceleration;
-        NSLog(@"正在减速 speed:%f angle:%f",speed,_tempAngle);
-    }else{
-        NSLog(@"正在匀速 speed:%f angle:%f a:%f",speed,_tempAngle,acceleration);
-    }
-    
+
+    //缓动公式
+    speed = (_tempAngle - speed) * easing;
     _tempAngle -= speed;
-    
-    if (_tempAngle * acceleration <= 0) {
-        
-        speed = _tempAngle;
-        
-        [self.link invalidate];
-        self.link = nil;
-        speed = 0;
-        _movingFlag = NO;
-        isSpeedUp = YES;
-        
-    }
-    
+
     
     for (RotationView *view in self.ballArray) {
-        
         view.angle += speed;
     }
     
+    
     [self moveTheBall:speed changSize:NO];
+    
+    
+    //缓动结束条件
+    if (fabs(_tempAngle) < 1) {
+        [self.link invalidate];
+        self.link = nil;
+        _movingFlag = NO;
+        
+        if (_pushFlag) {
+            [self push];
+        }
+    }
     
 }
 
 
 
+#pragma mark - 小球的点击事件
+- (void)touchUpMyBall:(RotationView *)rotationView {
+    
+    _pushFlag = YES;
+    
+    CGFloat angle = 180 - rotationView.angle;
+    
+    if (fabs(angle) < 2) {
+        
+        [self push];
+        
+    } else {
+        
+        [self animationBallMoveWithAngle:angle andBall:rotationView];
+        
+    }
+    
+    
+    
+}
 
 
-
-
-
+#pragma mark - 按钮点击Push事件
+- (void)push {
+    _pushFlag = NO;
+    
+    NSLog(@"PUSH");
+    
+}
 
 
 
