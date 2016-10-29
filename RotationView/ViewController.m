@@ -205,8 +205,6 @@
         float y = sin(DEGREES_TO_RADIANS(ball.angle)) * BallRotation;
         
         ball.center = CGPointMake(_center.x + x, _center.y + y);
-        
-        
     }
     
 }
@@ -303,112 +301,33 @@
 }
 
 
-
-
-
 /**
- *  内部方法：小球动画移动
+ *  动画移动小球方法
  *
- *  @param angle 总共需要移动的距离
+ *  @param angle 需要移动的角度
+ *  @param view  最近的小球
  */
-- (void)animationBallMoveWithAngle:(CGFloat)angle andBall:(RotationView *)ball{
-    
-    _tempAngle = angle;
-    
-    NSLog(@"%f",angle);
-    for (RotationView *view in self.ballArray) {
+- (void)animationBallMoveWithAngle:(CGFloat)angle andBall:(RotationView *)view {
+
+    [UIView animateWithDuration:0.8 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         
+        [self moveTheBall:angle changSize:NO];
         
-        /*****************路径动画*****************************/
-        CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
-        animation.duration = 0.4;
-        
-        UIBezierPath *bezierPath = [UIBezierPath bezierPathWithArcCenter:_center radius:BallRotation startAngle:DEGREES_TO_RADIANS(view.angle) endAngle:DEGREES_TO_RADIANS(view.angle + angle) clockwise:angle > 0 ? YES : NO];
-        
-        animation.path = bezierPath.CGPath;
-        
-        animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-        
-        [view.layer addAnimation:animation forKey:nil];
-        
-        /*****************放大缩小动画*****************************/
-        CGFloat scale = 1;
-//
-//        if (ball.angle + angle <= 180) {
-//            
-//            scale  = (view.angle + angle) / 180;
-//        }else{
-//            scale  = (360 - view.angle + angle) / 180;
-//        }
-        
-        if (ball.tag == view.tag) {
-            scale = 1;
-        }else if((ball.tag == view.tag + 1) || (ball.tag == view.tag - 1) || (ball.tag == view.tag - 3) || (ball.tag == view.tag + 3)) {
+        for (RotationView *temp in self.ballArray) {
             
-            scale = 0.6;
+            temp.angle += angle;
             
-        }else{
-            
-            scale = 0.2;
-        }
-        
-        
-
-        
-        
-        CABasicAnimation *basic = [CABasicAnimation animationWithKeyPath:@"bounds"];
-        basic.duration = 0.4;
-        basic.removedOnCompletion = NO;
-        basic.delegate = self;
-        basic.toValue = [NSValue valueWithCGRect:CGRectMake(0, 0, scale * BallDiameter, scale * BallDiameter)];
-        [view.imageView.layer addAnimation:basic forKey:@"bounds"];
-        
-        
-        
-//                CGFloat toValueScale = scale * BallDiameter / view.imageView.bounds.size.width;
-//        CAKeyframeAnimation *keyFrameAnimation = [CAKeyframeAnimation animationWithKeyPath:@"transform.scale"];
-//        keyFrameAnimation.duration = 0.4;
-//        //动画路径上的各值
-//        keyFrameAnimation.values    = @[@1,@((toValueScale - 1) / 3 + 1),@((toValueScale - 1) / 3 * 2 + 1),@(toValueScale)];
-//        
-//        keyFrameAnimation.keyTimes  = @[@(0),@(0.3),@(0.7),@(1)];
-        
-//        [view.imageView.layer addAnimation:keyFrameAnimation forKey:nil];
-        
-//        view.angle += angle;
-        
-        
-    }
-    
-
-    [self moveTheBall:angle changSize:NO];
-
-
-    
- 
-}
-
-
-- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag {
-    
-    for (RotationView *view in self.ballArray) {
-        
-        if ([view.imageView.layer animationForKey:@"bounds"] ) {
-            
-            NSLog(@"找到了");
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                view.angle += _tempAngle;
-            });
-            break;
             
         }
         
-        
-    }
+
+    } completion:nil];
+    
+    
+    
+    
+    
 }
-
-
 
 
 
