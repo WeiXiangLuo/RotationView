@@ -35,13 +35,14 @@
     BOOL    _movingFlag;
     
     BOOL    _pushFlag;
-
+    
 }
 
 @property (nonatomic, strong) NSMutableArray *ballArray;//用于存放小球的数组
 
 @property (nonatomic, retain) CADisplayLink *link;//小球运动的定时器动画
 
+@property (nonatomic, strong) UIPanGestureRecognizer *pan;//拖拽手势
 
 @end
 
@@ -70,6 +71,8 @@
     
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureRecognizer:)];
     [self.view addGestureRecognizer:pan];
+    
+    self.pan = pan;
     
 }
 
@@ -120,7 +123,7 @@
             }
             
         }];
-
+        
     }
 }
 
@@ -132,8 +135,9 @@
  *  @param pan 正在拖拽的UIPanGestureRecognizer对象
  */
 - (void)panGestureRecognizer:(UIPanGestureRecognizer *)pan {
- 
+    
     if (_movingFlag) {
+        _beginPoint = [pan locationInView:self.view];
         return;
     }
     
@@ -154,7 +158,7 @@
         //两个触摸点的偏移量 ，右下为正，左上为负
         CGSize offsize = CGSizeMake(currentPoint.x - _beginPoint.x, currentPoint.y - _beginPoint.y);
         
-
+        
         CGFloat angle;
         
         //在中心点下方时
@@ -233,16 +237,22 @@
  */
 - (CGFloat)angleWithPoint:(CGPoint)pointA anotherPoint:(CGPoint)pointB {
     
-
+    
     CGFloat distanceB = [self distanceWithPoint:pointA anotherPoint:_center];
     CGFloat distanceC = [self distanceWithPoint:pointB anotherPoint:_center];
+    
+    if (distanceB == 0 || distanceC == 0 || CGPointEqualToPoint(pointA, pointB)) {
+        return 0;
+    }
     
     CGFloat a = pointA.x - _center.x;
     CGFloat b = pointA.y - _center.y;
     CGFloat c = pointB.x - _center.x;
     CGFloat d = pointB.y - _center.y;
-
+    
     CGFloat angle = (180/M_PI) * acosf(((a*c) + (b*d)) / (distanceB * distanceC));
+    
+    //    NSLog(@"angle : %f ,a : %f,b :%f,c : %f, d : %f",angle,a,b,c,d);
     
     return angle;
     
@@ -276,8 +286,8 @@
     
     //调用动画移动小球的方法
     [self animationBallMoveWithAngle:180 - view.angle andBall:view];
-
-
+    
+    
 }
 
 
@@ -304,7 +314,7 @@
         }
         
     }];
-
+    
     
     return self.ballArray[index];
     
@@ -318,16 +328,17 @@
  *  @param view  最近的小球
  */
 - (void)animationBallMoveWithAngle:(CGFloat)angle andBall:(RotationView *)view {
-
+    
     
     _tempAngle = angle;
     
     if (self.link == nil) {
         
         _movingFlag = YES;
+        [self.view removeGestureRecognizer:self.pan];
         self.link = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLink:)];
         [self.link addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-    
+        
     }
 }
 
@@ -343,11 +354,11 @@
     static float speed = 0;
     float easing = 0.05;
     
-
+    
     //缓动公式
     speed = (_tempAngle - speed) * easing;
     _tempAngle -= speed;
-
+    
     
     for (RotationView *view in self.ballArray) {
         view.angle += speed;
@@ -362,6 +373,7 @@
         [self.link invalidate];
         self.link = nil;
         _movingFlag = NO;
+        [self.view addGestureRecognizer:self.pan];
         
         if (_pushFlag) {
             [self push];
